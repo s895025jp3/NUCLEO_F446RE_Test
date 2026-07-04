@@ -1,0 +1,13 @@
+# STM32CubeIDE build output
+Debug/
+Release/
+
+# STM32CubeIDE launch config (machine-specific, regenerate as needed)
+*.launch
+
+# Eclipse/CDT metadata that is workspace-specific, not project-specific
+.metadata/
+
+# OS files
+Thumbs.db
+.DS_Store
