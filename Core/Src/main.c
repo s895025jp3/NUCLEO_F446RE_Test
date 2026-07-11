@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h> // "為了讓 main() 使用 printf 進行序列埠除錯輸出" 2026/07/05 [ADD] by s895025.
+#include "app_button_led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,8 +46,6 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-volatile uint8_t g_led_blinking = 0;
-volatile uint32_t g_last_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,7 +78,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  App_ButtonLed_Init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -96,29 +95,12 @@ int main(void)
   printf("Hello, NUCLEO-F446RE!\r\n"); // 2026/07/04 [ADD] by s895025.
   /* USER CODE END 2 */
 
-  /* Initialize leds */
-  BSP_LED_Init(LED2);
-
-  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI); // BUTTON_USER:B1
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-    if (g_led_blinking == 1)
-    {
-      if (HAL_GetTick() - g_last_time >= 500)
-      {
-        g_last_time = HAL_GetTick();
-        BSP_LED_Toggle(LED2);
-      }
-    }
-    else
-    {
-      BSP_LED_Off(LED2);
-    }
+    App_ButtonLed_Update();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -232,16 +214,6 @@ int __io_putchar(int ch)
 {
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_pin) // 在中斷服務程式（ISR）裡執行
-{
-  if (GPIO_pin == GPIO_PIN_13) // GPIO_PIN_13 參考 Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo.h
-  {
-    g_led_blinking = !g_led_blinking;
-    if (g_led_blinking == 1)
-      g_last_time = HAL_GetTick();
-  }
 }
 /* USER CODE END 4 */
 
