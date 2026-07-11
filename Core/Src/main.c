@@ -45,7 +45,7 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t g_led_blinking = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -105,10 +105,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // BSP_LED_Toggle(LED2);
-    // HAL_Delay(1000);
     /* USER CODE END WHILE */
-
+    if (g_led_blinking == 1)
+    {
+      BSP_LED_Toggle(LED2);
+      HAL_Delay(500);
+    }
+    else
+    {
+      BSP_LED_Off(LED2);
+    }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -228,7 +234,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_pin) // 在中斷服務程式（ISR）
 {
   if (GPIO_pin == GPIO_PIN_13) // GPIO_PIN_13 參考 Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo.h
   {
-    BSP_LED_Toggle(LED2);
+    g_led_blinking = !g_led_blinking;
   }
 }
 /* USER CODE END 4 */
