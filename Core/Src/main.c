@@ -105,8 +105,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    BSP_LED_Toggle(LED2);
-    HAL_Delay(1000);
+    // BSP_LED_Toggle(LED2);
+    // HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -222,6 +222,14 @@ int __io_putchar(int ch)
 {
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_pin) // 在中斷服務程式（ISR）裡執行
+{
+  if (GPIO_pin == GPIO_PIN_13) // GPIO_PIN_13 參考 Drivers\BSP\STM32F4xx-Nucleo\stm32f4xx_nucleo.h
+  {
+    BSP_LED_Toggle(LED2);
+  }
 }
 /* USER CODE END 4 */
 
