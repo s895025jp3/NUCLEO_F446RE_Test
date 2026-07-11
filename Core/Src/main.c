@@ -92,21 +92,21 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  printf("Hello, NUCLEO-F446RE!\r\n");
+  printf("Hello, NUCLEO-F446RE!\r\n"); // 2026/07/04 [ADD] by s895025.
   /* USER CODE END 2 */
 
   /* Initialize leds */
   BSP_LED_Init(LED2);
 
   /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI); // BUTTON_USER:B1
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // printf("Hello, NUCLEO-F446RE!\r\n");
-    // HAL_Delay(1000);
+    BSP_LED_Toggle(LED2);
+    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
