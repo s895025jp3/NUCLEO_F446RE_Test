@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "main.h"
 #include "app_uart_cmd.h"
+#include "app_button_led.h"
 
 static uint8_t rx_buf[1];
-static uint8_t line_buf[64];
+static char line_buf[64];
 static uint8_t line_len;
 static char temp_char;
 
@@ -40,14 +43,34 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // "override:在中斷�
           printf("%c", line_buf[i]);
         }
         printf("\r\n");
+
+        line_buf[line_len] = '\0';
+
+        App_UART_ProcessCommand(line_len);
+
         line_len = 0;
       }
     }
   }
 }
 
-void App_UART_Receive(void) // "啟動中斷式接收字元" 2026/07/12 [ADD] by s895025.
+void App_Uart_Receive(void) // "啟動中斷式接收字元" 2026/07/12 [ADD] by s895025.
 {
   HAL_UART_Receive_IT(&huart2, rx_buf, 1);
 }
 
+void App_UART_ProcessCommand(uint8_t length)
+{
+  for (int i = 0; i < length; i++)
+  {
+    line_buf[i] = tolower(line_buf[i]);
+  }
+  if (strcmp(line_buf, "led on") == 0)
+  {
+    App_ButtonLed_SetBlinking(1);
+  }
+  if (strcmp(line_buf, "led off") == 0)
+  {
+    App_ButtonLed_SetBlinking(0);
+  }
+}

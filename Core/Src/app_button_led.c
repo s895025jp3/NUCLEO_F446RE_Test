@@ -41,3 +41,10 @@ void App_ButtonLed_Update(void)
   }
 }
 
+void App_ButtonLed_SetBlinking(uint8_t LedState)
+{
+  if (LedState == 0)
+    s_led_blinking = 0;
+  else if (LedState == 1)
+    s_led_blinking = 1;
+}

@@ -97,7 +97,7 @@ int main(void)
   
   App_ButtonLed_Init();
   
-  App_UART_Receive(); // "啟動中斷式接收" 2026/07/11 [ADD] by s895025.
+  App_Uart_Receive(); // "啟動中斷式接收" 2026/07/11 [ADD] by s895025.
 
   /* USER CODE END 2 */ //安全的 USER CODE 區塊 2
 
