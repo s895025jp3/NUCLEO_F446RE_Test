@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h> // "為了讓 main() 使用 printf 進行序列埠除錯輸出" 2026/07/05 [ADD] by s895025.
 #include "app_button_led.h"
+#include "app_uart_cmd.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +59,7 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t RX_buf[10];
+
 /* USER CODE END 0 */
 
 /**
@@ -91,28 +92,24 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
+  /* USER CODE BEGIN 2 */ //安全的 USER CODE 區塊 2
   printf("Hello, NUCLEO-F446RE1!\r\n"); // "printf Uart log" 2026/07/04 [ADD] by s895025.
   
-  HAL_UART_Receive_IT(&huart2, RX_buf, 1); // "啟動中斷式接收，收 1 個字元" 2026/07/11 [ADD] by s895025.
+  App_ButtonLed_Init();
+  
+  App_UART_Receive(); // "啟動中斷式接收" 2026/07/11 [ADD] by s895025.
 
-  /* USER CODE END 2 */
-
-  /* Initialize leds */
-  BSP_LED_Init(LED2);
-
-  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+  /* USER CODE END 2 */ //安全的 USER CODE 區塊 2
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */ //安全的 USER CODE 區塊 3
+    App_ButtonLed_Update();
   }
-  /* USER CODE END 3 */
+  /* USER CODE END 3 */ //安全的 USER CODE 區塊 3
 }
 
 /**
@@ -217,19 +214,17 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
-/* USER CODE BEGIN 4 */ // "放在 USER CODE BEGIN 4，避免 CubeMX regenerate code 時被覆蓋"
+/* USER CODE BEGIN 4 */ //安全的 USER CODE 區塊 4
+// "放在 USER CODE BEGIN 4，避免 CubeMX regenerate code 時被覆蓋"
+
 // "將 printf 導向 USART2，透過 HAL_UART_Transmit 送出，供 syscalls.c 的 _write() 呼叫" 2026/07/05 [ADD] by s895025.
 int __io_putchar(int ch)
 {
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
 }
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // "在中斷服務程式（ISR）裡，執行收 1 個字元" 2026/07/11 [ADD] by s895025.
-{
-  printf("Receive input char: %c%c\r\n", RX_buf[0]); 
-  HAL_UART_Receive_IT(huart, RX_buf, 1);
-}
-/* USER CODE END 4 */
+
+/* USER CODE END 4 */ //安全的 USER CODE 區塊 4
 
 /**
   * @brief  This function is executed in case of error occurrence.
