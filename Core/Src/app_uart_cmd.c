@@ -13,7 +13,7 @@ static char temp_char;
 
 extern UART_HandleTypeDef huart2;
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // "override:在中斷服務程式（ISR）裡，執行收字元" 2026/07/12 [ADD] by s895025.
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // "override:在中斷服務程式（ISR）裡，執行接收字元" 2026/07/12 [ADD] by s895025.
 {                                                       // 資料真正'進來'的時間點，只有 callback 知道
   HAL_UART_Receive_IT(huart, rx_buf, 1);
   if (rx_buf[0] != '\r' && rx_buf[0] != '\n')
@@ -59,7 +59,7 @@ void App_Uart_Receive(void) // "啟動中斷式接收字元" 2026/07/12 [ADD] by
   HAL_UART_Receive_IT(&huart2, rx_buf, 1);
 }
 
-void App_UART_ProcessCommand(uint8_t length)
+void App_UART_ProcessCommand(uint8_t length) // "判斷輸入字元並執行命令" 2026/07/12 [ADD] by s895025.
 {
   for (int i = 0; i < length; i++)
   {

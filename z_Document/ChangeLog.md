@@ -10,3 +10,7 @@
 | 2026/07/11 | main.c | Add: Button toggles LED blink mode (blocking HAL_Delay) | fcd36ab |
 | 2026/07/11 | main.c | Add: Button toggles LED blink mode (non-blocking HAL_GetTick) | c748033 |
 | 2026/07/11 | main.c, app_button_led.c/.h | Refactor: Move button/LED logic into its own module | e01c881 |
+| 2026/07/11 | main.c, stm32f4xx_it.c/.h, stm32f4xx_hal_msp.c, .ioc | Add: USART2 interrupt receive (echo single char) | b670748 |
+| 2026/07/12 | main.c, app_uart_cmd.c/.h | Refactor: Move UART receive logic into its own module | 91b15bc |
+| 2026/07/12 | app_uart_cmd.c | Add: UART echoes full line (handles \r\n edge case) | 981b2c0 |
+| 2026/07/12 | app_uart_cmd.c, app_button_led.c/.h | Add: UART commands control LED (led on/off, case-insensitive) | 99ffb9e |
