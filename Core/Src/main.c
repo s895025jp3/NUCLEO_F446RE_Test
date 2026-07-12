@@ -44,6 +44,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+I2C_HandleTypeDef hi2c1;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -53,13 +55,14 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+HAL_StatusTypeDef i2c_status; 
 /* USER CODE END 0 */
 
 /**
@@ -92,24 +95,40 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */ //安全的 USER CODE 區塊 2
+  MX_I2C1_Init();
+  /* USER CODE BEGIN 2 */
+  // Button
   printf("Hello, NUCLEO-F446RE1!\r\n"); // "printf Uart log" 2026/07/04 [ADD] by s895025.
   
-  App_ButtonLed_Init();
-  
+  // Uart
   App_Uart_Receive();
 
-  /* USER CODE END 2 */ //安全的 USER CODE 區塊 2
+  // I2C
+  for (int address = 0x00; address <= 0x7F; address++)
+  {
+    i2c_status = HAL_I2C_IsDeviceReady(&hi2c1, address << 1, 13, 100);
+    if (i2c_status == HAL_OK)
+      printf("address state: %02X\r\n", address);
+  }
+
+  /* USER CODE END 2 */
+
+  /* Initialize leds */
+  BSP_LED_Init(LED2);
+
+  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
+  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-    /* USER CODE BEGIN 3 */ //安全的 USER CODE 區塊 3
+
+    /* USER CODE BEGIN 3 */
     App_ButtonLed_Update();
   }
-  /* USER CODE END 3 */ //安全的 USER CODE 區塊 3
+  /* USER CODE END 3 */
 }
 
 /**
@@ -160,6 +179,40 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -199,6 +252,7 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
@@ -209,12 +263,22 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PB6 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
-/* USER CODE BEGIN 4 */ //安全的 USER CODE 區塊 4
+/* USER CODE BEGIN 4 */
 // "放在 USER CODE BEGIN 4，避免 CubeMX regenerate code 時被覆蓋"
 
 // "將 printf 導向 USART2，透過 HAL_UART_Transmit 送出，供 syscalls.c 的 _write() 呼叫" 2026/07/05 [ADD] by s895025.
@@ -224,7 +288,7 @@ int __io_putchar(int ch)
   return ch;
 }
 
-/* USER CODE END 4 */ //安全的 USER CODE 區塊 4
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
