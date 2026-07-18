@@ -24,6 +24,7 @@
 #include <stdio.h> // "為了讓 main() 使用 printf 進行序列埠除錯輸出" 2026/07/05 [ADD] by s895025.
 #include "app_button_led.h"
 #include "app_uart_cmd.h"
+#include "app_bmp180.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -106,11 +107,12 @@ int main(void)
   // I2C
   for (int address = 0x00; address <= 0x7F; address++)
   {
-    i2c_status = HAL_I2C_IsDeviceReady(&hi2c1, address << 1, 13, 100);
+    i2c_status = HAL_I2C_IsDeviceReady(&hi2c1, address << 1, 3, 100); // "Check I2C address state" 2026/07/18 [ADD] by s895025.
     if (i2c_status == HAL_OK)
       printf("address state: %02X\r\n", address);
   }
 
+  App_Bmp180_ReadChipId(); // "Read chip-id from Bmp180" 2026/07/18 [ADD] by s895025.
   /* USER CODE END 2 */
 
   /* Initialize leds */

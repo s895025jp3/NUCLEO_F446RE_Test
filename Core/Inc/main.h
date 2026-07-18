@@ -71,6 +71,7 @@ void Error_Handler(void);
 #define SWO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+extern I2C_HandleTypeDef hi2c1;
 
 /* USER CODE END Private defines */
 
