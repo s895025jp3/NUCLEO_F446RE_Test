@@ -112,7 +112,7 @@ int main(void)
       printf("address state: %02X\r\n", address);
   }
 
-  App_Bmp180_ReadChipId(); // "Read chip-id from Bmp180" 2026/07/18 [ADD] by s895025.
+  App_Bmp180_ReadData(); // "Read chip-id/CalibCoeffs from Bmp180" 2026/07/18 [ADD] by s895025.
   /* USER CODE END 2 */
 
   /* Initialize leds */
