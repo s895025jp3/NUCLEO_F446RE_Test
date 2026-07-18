@@ -8,6 +8,9 @@ Release/
 # Eclipse/CDT metadata that is workspace-specific, not project-specific
 .metadata/
 
+# CDT indexer env-hash churns on every machine/toolchain PATH change
+.settings/language.settings.xml
+
 # OS files
 Thumbs.db
 .DS_Store
