@@ -25,6 +25,7 @@ void App_Bmp180_ReadData()
     App_Bmp180_ReadChipId();
     //App_Bmp180_ReadCalibCoeffs();
     App_Bmp180_ReadCalibCoeffs_ALL();
+    App_Bmp180_Read_UTvalue();
 }
 
 void App_Bmp180_ReadChipId()
@@ -75,16 +76,30 @@ void App_Bmp180_ReadCalibCoeffs_ALL()
         calib_data.Bmp180_MC = Bmp180_raw_buf[18]<<8 | Bmp180_raw_buf[19];
         calib_data.Bmp180_MD = Bmp180_raw_buf[20]<<8 | Bmp180_raw_buf[21];
    
-        printf("Bmp180_AC1=: %04X\r\n",  calib_data.Bmp180_AC1);
-        printf("Bmp180_AC2=: %04X\r\n",  calib_data.Bmp180_AC2);
-        printf("Bmp180_AC3=: %04X\r\n",  calib_data.Bmp180_AC3);
-        printf("Bmp180_AC4=: %04X\r\n",  calib_data.Bmp180_AC4);
-        printf("Bmp180_AC5=: %04X\r\n",  calib_data.Bmp180_AC5);
-        printf("Bmp180_AC6=: %04X\r\n",  calib_data.Bmp180_AC6);
-        printf("Bmp180_B1=: %04X\r\n",  calib_data.Bmp180_B1);
-        printf("Bmp180_B2=: %04X\r\n",  calib_data.Bmp180_B2);
-        printf("Bmp180_MB=: %04X\r\n",  calib_data.Bmp180_MB);
-        printf("Bmp180_MC=: %04X\r\n",  calib_data.Bmp180_MC);
-        printf("Bmp180_MD=: %04X\r\n",  calib_data.Bmp180_MD);
+        printf("Bmp180_AC1= %04X\r\n",  calib_data.Bmp180_AC1);
+        printf("Bmp180_AC2= %04X\r\n",  calib_data.Bmp180_AC2);
+        printf("Bmp180_AC3= %04X\r\n",  calib_data.Bmp180_AC3);
+        printf("Bmp180_AC4= %04X\r\n",  calib_data.Bmp180_AC4);
+        printf("Bmp180_AC5= %04X\r\n",  calib_data.Bmp180_AC5);
+        printf("Bmp180_AC6= %04X\r\n",  calib_data.Bmp180_AC6);
+        printf("Bmp180_B1= %04X\r\n",  calib_data.Bmp180_B1);
+        printf("Bmp180_B2= %04X\r\n",  calib_data.Bmp180_B2);
+        printf("Bmp180_MB= %04X\r\n",  calib_data.Bmp180_MB);
+        printf("Bmp180_MC= %04X\r\n",  calib_data.Bmp180_MC);
+        printf("Bmp180_MD= %04X\r\n",  calib_data.Bmp180_MD);
     }
+}
+
+void App_Bmp180_Read_UTvalue()
+{
+    uint8_t Bmp180_UT_buf8[2];
+    uint16_t Bmp180_UT_buf16;
+    uint8_t Bmp180_UT_cmd = 0x2E;
+
+    HAL_I2C_Mem_Write(&hi2c1, 0x77 << 1, 0xF4, I2C_MEMADD_SIZE_8BIT, &Bmp180_UT_addr, 1, 100);// 寫入 Uncompensated Temperature value
+    HAL_Delay(5);
+    HAL_I2C_Mem_Read(&hi2c1, 0x77 << 1, 0xF6, I2C_MEMADD_SIZE_8BIT, Bmp180_UT_buf8, 2, 100);// 讀取 Uncompensated Temperature value
+    
+    Bmp180_UT_buf16 = Bmp180_UT_buf8[0]<<8 | Bmp180_UT_buf8[1];
+    printf("Bmp180 Uncompensated Temperature= %04X\r\n", Bmp180_UT_buf16);
 }
