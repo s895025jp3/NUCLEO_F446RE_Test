@@ -14,3 +14,11 @@
 | 2026/07/12 | main.c, app_uart_cmd.c/.h | Refactor: Move UART receive logic into its own module | 91b15bc |
 | 2026/07/12 | app_uart_cmd.c | Add: UART echoes full line (handles \r\n edge case) | 981b2c0 |
 | 2026/07/12 | app_uart_cmd.c, app_button_led.c/.h | Add: UART commands control LED (led on/off, case-insensitive) | 99ffb9e |
+| 2026/07/12 | main.c, .ioc, stm32f4xx_hal_msp.c | Add: I2C1 address scan (PB8/PB9, finds BMP180 at 0x77) | 13b6f05 |
+| 2026/07/18 | app_bmp180.c/.h, main.h | Add: Read BMP180 chip-id from I2C1 (register 0xD0, confirms 0x55) | ac434c2 |
+| 2026/07/18 | app_bmp180.c | Add: Read BMP180 AC1 calibration coefficient (0xAA/0xAB, MSB+LSB) | c673322 |
+| 2026/07/18 | app_bmp180.c | Add: Read BMP180 calibration coefficients (11 params via struct) | 4418fad |
+| 2026/07/18 | app_bmp180.c | Add: Read BMP180 uncompensated temperature (UT) from I2C1 | b355176 |
+| 2026/07/19 | app_bmp180.c | Add: Calculate BMP180 true temperature | b13f086 |
+| 2026/07/19 | app_bmp180.c | Add: Calculate BMP180 true pressure (fix B5 variable shadowing) | 6fe40cb |
+| 2026/07/19 | main.c, app_uart_cmd.c | Add: Real-time UART echo and command prompt (>) | 483f19c |

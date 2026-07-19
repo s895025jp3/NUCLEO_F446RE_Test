@@ -45,13 +45,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) // "override:在中斷�
           printf("%c", line_buf[i]);
         }
         printf("\r\n");
-printf("> ");
+
         line_buf[line_len] = '\0';
 
         App_UART_ProcessCommand(line_len);
         temp_char = 0;
         line_len = 0;
-        
+        printf("> ");
       }
     }
   }
