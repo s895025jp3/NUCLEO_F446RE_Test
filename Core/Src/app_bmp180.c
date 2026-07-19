@@ -4,6 +4,8 @@
 #include "app_bmp180.h"
 
 uint16_t Bmp180_UT_buf16;
+uint32_t Bmp180_UP_buf32;
+int32_t Bmp180_B5;
 
 typedef struct
 {
@@ -26,8 +28,8 @@ void App_Bmp180_ReadData()
     App_Bmp180_ReadChipId();
     //App_Bmp180_ReadCalibCoeffs();
     App_Bmp180_ReadCalibCoeffs_ALL();
-    App_Bmp180_Read_UTvalue();
-    App_Bmp180_Calculate_Tvalue();
+    App_Bmp180_ReadTemperature();
+    App_Bmp180_ReadPressure();
 }
 
 void App_Bmp180_ReadChipId()
@@ -92,10 +94,23 @@ void App_Bmp180_ReadCalibCoeffs_ALL()
     }
 }
 
+
+void App_Bmp180_ReadTemperature(void)
+{
+    App_Bmp180_Read_UTvalue();
+    App_Bmp180_Calculate_Tvalue();
+}
+
+void App_Bmp180_ReadPressure(void)
+{
+    App_Bmp180_Read_UPvalue();
+    App_Bmp180_Calculate_Pvalue();
+}
+
 void App_Bmp180_Read_UTvalue()
 {
-    uint8_t Bmp180_UT_buf8[2];
     uint8_t Bmp180_UT_cmd = 0x2E;
+    uint8_t Bmp180_UT_buf8[2];
 
     HAL_I2C_Mem_Write(&hi2c1, 0x77 << 1, 0xF4, I2C_MEMADD_SIZE_8BIT, &Bmp180_UT_cmd, 1, 100);// 寫入 Uncompensated Temperature value
     HAL_Delay(5);
@@ -113,14 +128,75 @@ void App_Bmp180_Calculate_Tvalue()
     // B5 = X1 + X2
     // T  = (B5 + 8) / 2^4 (單位是 0.1°C)
 
-    int32_t X1, X2 , B5, T; // int32_t = long, 寫 int32_t 更明確 
+    int32_t X1, X2, T; // int32_t = long, 寫 int32_t 更明確 
 
     X1 = ((Bmp180_UT_buf16 - calib_data.Bmp180_AC6) * calib_data.Bmp180_AC5) / (1 << 15);
     X2 = (calib_data.Bmp180_MC * (1 << 11)) / (X1 + calib_data.Bmp180_MD);
-    B5 = X1 + X2 ;
-    T = (B5 + 8) / (1 << 4);
+    Bmp180_B5 = X1 + X2 ;
+    T = (Bmp180_B5 + 8) / (1 << 4);
     if (T > 0)
         printf("Bmp180 Temperature= %d => %d.%d °C\r\n", T, T/10, T%10);
     else
         printf("Bmp180 Temperature= %d => -%d.%d °C\r\n", T, abs(T)/10, abs(T)%10);
+}
+
+void App_Bmp180_Read_UPvalue()
+{
+    uint8_t oss = 0;
+    uint8_t Bmp180_UP_cmd = 0x34;
+    uint8_t Bmp180_UP_buf8[3];
+
+    HAL_I2C_Mem_Write(&hi2c1, 0x77 << 1, 0xF4, I2C_MEMADD_SIZE_8BIT, &Bmp180_UP_cmd, 1, 100);// 寫入 Uncompensated Pressure value
+    HAL_Delay(5);
+    HAL_I2C_Mem_Read(&hi2c1, 0x77 << 1, 0xF6, I2C_MEMADD_SIZE_8BIT, Bmp180_UP_buf8, 3, 100);// 讀取 Uncompensated Pressure value
+    
+    Bmp180_UP_buf32 = (Bmp180_UP_buf8[0]<<16 | Bmp180_UP_buf8[1]<<8 | Bmp180_UP_buf8[2]) >> (8 - oss);
+    printf("Bmp180 Uncompensated Pressure= %04lX\r\n", Bmp180_UP_buf32);
+}
+
+void App_Bmp180_Calculate_Pvalue()
+{
+    // 計算實際氣壓公式
+    // B6 = B5 - 4000
+    // X1 = (B2 * (B6*B6/2^12)) / 2^11
+    // X2 = AC2*B6 / 2^11
+    // X3 = X1+X2
+    // B3 = (((AC1*4+X3)<<oss)+2) / 4
+    // X1 = AC3*B6 / 2^13
+    // X2 = (B1*(B6*B6/2^12)) / 2^16
+    // X3 = ((X1+X2)+2) / 2^2
+    // B4 = AC4*(unsigned long)(X3+32768) / 2^15
+    // B7 = ((unsigned long)UP-B3) * (50000>>oss)
+    // if (B7<0x80000000) p=(B7*2)/B4
+    // else p=(B7/B4)*2
+    // X1 = (p/2^8)*(p/2^8)
+    // X1 = (X1*3038)/2^16
+    // X2 = (-7357*p)/2^16
+    // p = p + (X1+X2+3791)/2^4
+
+    uint8_t oss = 0;
+    int32_t X1, X2, X3, B3, B6, P; // int32_t = long, 寫 int32_t 更明確 
+    uint32_t B4, B7;
+
+    B6 = Bmp180_B5 - 4000;
+    X1 = (calib_data.Bmp180_B2 * ((B6 * B6) / (1 << 12))) / (1 << 11);
+    X2 = (calib_data.Bmp180_AC2 * B6) / (1 << 11);
+    X3 = X1 + X2;
+    B3 = (((calib_data.Bmp180_AC1 * 4 + X3) << oss) + 2 ) / 4;
+    X1 = (calib_data.Bmp180_AC3* B6) / (1 << 13);
+    X2 = (calib_data.Bmp180_B1 * (B6  *B6 / (1 << 12))) / (1 << 16);
+    X3 = (( X1 + X2) + 2) / (1 << 2);
+    B4 = (calib_data.Bmp180_AC4 * (unsigned long)(X3 + 32768)) / (1 << 15);
+    B7 = ((unsigned long)Bmp180_UP_buf32 - B3) * (50000 >> oss);
+    if (B7 < 0x80000000) 
+        P =(B7 * 2) / B4;
+    else 
+        P = (B7 / B4) * 2;
+    X1 = (P / (1 << 8))*(P / (1 << 8));
+    X1 = (X1 * 3038) / (1 << 16);
+    X2 = (-7357 * P) / (1 << 16);
+    P = P + (X1 + X2 + 3791) / (1 << 4);
+    
+    printf("Bmp180 Pressure= %d => %d hPa\r\n", P, P/100);
+
 }

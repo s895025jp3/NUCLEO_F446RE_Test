@@ -99,7 +99,7 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   // Button
-  printf("Hello, NUCLEO-F446RE1!\r\n"); // "printf Uart log" 2026/07/04 [ADD] by s895025.
+  printf("\nHello, NUCLEO-F446RE1!\r\n"); // "printf Uart log" 2026/07/04 [ADD] by s895025.
   
   // Uart
   App_Uart_Receive();
