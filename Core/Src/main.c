@@ -25,6 +25,7 @@
 #include "app_button_led.h"
 #include "app_uart_cmd.h"
 #include "app_bmp180.h"
+#include "app_oled.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,6 +115,9 @@ int main(void)
 
   App_Bmp180_ReadData(); // "Read chip-id/CalibCoeffs from Bmp180" 2026/07/18 [ADD] by s895025.
   
+  App_Oled_Init();
+  App_Oled_TestDisplay();
+
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */
 
