@@ -22,3 +22,7 @@
 | 2026/07/19 | app_bmp180.c | Add: Calculate BMP180 true temperature | b13f086 |
 | 2026/07/19 | app_bmp180.c | Add: Calculate BMP180 true pressure (fix B5 variable shadowing) | 6fe40cb |
 | 2026/07/19 | main.c, app_uart_cmd.c | Add: Real-time UART echo and command prompt (>) | 483f19c |
+| 2026/07/26 | ssd1306.c/.h, ssd1306_fonts.c/.h, ssd1306_conf.h | Add: Vendor SSD1306 OLED driver library (afiskon/stm32-ssd1306) | 1fa7fcd |
+| 2026/07/26 | app_oled.c/.h, main.c, ssd1306_conf.h, .cproject | Add: Integrate SSD1306 OLED via app_oled module, display text test | aff2f76 |
+| 2026/07/26 | app_oled.c/.h, main.c, ssd1306_conf.h | Add: OLED color-zone boundary test helper (yellow/blue split at y=16) | cc419e4 |
+| 2026/07/26 | app_bmp180.c/.h, app_oled.c/.h, main.c, .cproject | Add: Display BMP180 temperature/pressure on OLED | 53e280a |
