@@ -6,6 +6,7 @@
 uint16_t Bmp180_UT_buf16;
 uint32_t Bmp180_UP_buf32;
 int32_t Bmp180_B5;
+static int32_t Bmp180_Temperature, Bmp180_Pressure;
 
 typedef struct
 {
@@ -138,6 +139,8 @@ void App_Bmp180_Calculate_Tvalue()
         printf("Bmp180 Temperature= %d => %d.%d °C\r\n", T, T/10, T%10);
     else
         printf("Bmp180 Temperature= %d => -%d.%d °C\r\n", T, abs(T)/10, abs(T)%10);
+
+    Bmp180_Temperature = T;
 }
 
 void App_Bmp180_Read_UPvalue()
@@ -198,5 +201,13 @@ void App_Bmp180_Calculate_Pvalue()
     P = P + (X1 + X2 + 3791) / (1 << 4);
     
     printf("Bmp180 Pressure= %d => %d hPa\r\n", P, P/100);
+    Bmp180_Pressure = P;
+}
 
+int32_t App_Bmp180_GetTemperature(void) {
+    return Bmp180_Temperature;
+}
+
+int32_t App_Bmp180_GetPressure(void) {
+    return Bmp180_Pressure;
 }

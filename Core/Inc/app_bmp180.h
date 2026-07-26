@@ -10,3 +10,5 @@ void App_Bmp180_Read_UTvalue(void);
 void App_Bmp180_Calculate_Tvalue(void);
 void App_Bmp180_Read_UPvalue(void);
 void App_Bmp180_Calculate_Pvalue(void);
+int32_t App_Bmp180_GetTemperature(void);
+int32_t App_Bmp180_GetPressure(void);
