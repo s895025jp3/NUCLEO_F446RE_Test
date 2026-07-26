@@ -14,3 +14,12 @@ void App_Oled_TestDisplay(void) {
     ssd1306_UpdateScreen();
 }
 
+void App_Oled_TestColorBoundary(void) {
+    ssd1306_Fill(Black);
+
+    for (uint8_t y = 0; y < 64; y += 4) {
+        ssd1306_Line(0, y, 127, y, White);
+    }
+
+    ssd1306_UpdateScreen();
+}

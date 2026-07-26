@@ -116,7 +116,8 @@ int main(void)
   App_Bmp180_ReadData(); // "Read chip-id/CalibCoeffs from Bmp180" 2026/07/18 [ADD] by s895025.
   
   App_Oled_Init();
-  App_Oled_TestDisplay();
+  //App_Oled_TestDisplay();
+  App_Oled_TestColorBoundary();
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */
