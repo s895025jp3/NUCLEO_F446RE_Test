@@ -22,7 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h> // "為了讓 main() 使用 printf 進行序列埠除錯輸出" 2026/07/05 [ADD] by s895025.
+#include <stdio.h> // "為了 使用 printf 進行序列埠除錯輸出" 2026/07/05 [ADD] by s895025.
+#include <string.h> // "為了 使用 memset(...)" 2026/08/01 [ADD] by s895025.
 #include "app_button_led.h"
 #include "app_uart_cmd.h"
 #include "app_bmp180.h"
@@ -127,16 +128,27 @@ int main(void)
   App_Oled_ReadData();
 
   // SPI
-  uint8_t txBuf[4] = {0xFF,0xFF,0xFF,0xFF};
-  uint8_t rxBuf[4];
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // CS 拉高: 卡片尚未被選取, 才能送 dummy clock
+  uint8_t dummy[10];
+  uint8_t dummy[10];
+  memset(dummy, 0xFF, sizeof(dummy));
+  HAL_SPI_Transmit(&hspi3, dummy, 10, HAL_MAX_DELAY); // 送≥74個clock(10 byte=80 clock), 讓卡片完成開機、切換到SPI mode
 
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);
-  HAL_StatusTypeDef spi_status = HAL_SPI_TransmitReceive(&hspi3, txBuf, rxBuf, 4, HAL_MAX_DELAY);
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET); // CS拉低: 選取卡片, 準備送指令
 
-  printf("SPI status: %d\r\n", spi_status);
-  for (int i = 0; i < 4; i++)
-    printf("%02X\n", rxBuf[i]);
+  uint8_t cmd0[6] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95}; // CMD0 (GO_IDLE_STATE): 0x40=start+cmd index0, 中間4 byte固定填0(無參數), 0x95=CMD0專用CRC7+stop bit
+  HAL_SPI_Transmit(&hspi3, cmd0, 6, HAL_MAX_DELAY);
+
+  uint8_t r1 = 0xFF;
+  for (int i = 0; i < 8; i++){
+      uint8_t tx = 0xFF;
+      HAL_SPI_TransmitReceive(&hspi3, &tx, &r1, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳的 response byte
+      //printf("attempt %d: %02X\r\n", i, r1);
+      if (r1 != 0xFF) break;   // 收到非 0xFF, 代表卡片已回應
+  }
+
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // 收到回應, 這次CMD0 transaction結束, CS拉高
+  printf("%02X\n", r1);
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */
@@ -263,7 +275,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
