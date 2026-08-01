@@ -135,14 +135,14 @@ int main(void)
 
   HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET); // CS拉低: 選取卡片, 準備送指令
 
-  uint8_t cmd0[6] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95}; // CMD0 (GO_IDLE_STATE): 0x40=start+cmd index0, 中間4 byte固定填0(無參數), 0x95=CMD0專用CRC7+stop bit
+  uint8_t cmd0[6] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95}; // CMD0 (GO_IDLE_STATE): 0x40=start+cmd index0, 中間4 byte固定填0(無參數), 0x95=cmd0專用CRC7+stop bit
   HAL_SPI_Transmit(&hspi3, cmd0, 6, HAL_MAX_DELAY);
 
   uint8_t tx_dummy = 0xFF;
   uint8_t r1_cmd0 = 0xFF;
   for (int i = 0; i < 8; i++){
-      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd0, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳的 response byte
-      if (r1_cmd0 != 0xFF) break;   // 收到非 0xFF, 代表卡片已回應
+      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd0, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳cmd0的 response byte
+      if (r1_cmd0 != 0xFF) break; // 收到非 0xFF, 代表卡片已回應
   }
   if (r1_cmd0 != 0x01)
     printf("CMD0 failed: %02X\r\n", r1_cmd0);
@@ -154,16 +154,62 @@ int main(void)
   uint8_t r1_cmd8 = 0xFF;
   uint8_t cmd8_echo[4];
   for (int j = 0; j < 8; j++){
-      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd8, 1, HAL_MAX_DELAY);
+      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd8, 1, HAL_MAX_DELAY); // 回傳cmd8的 response byte
       if (r1_cmd8 != 0xFF) break;
   }
   HAL_SPI_TransmitReceive(&hspi3, dummy, cmd8_echo, 4, HAL_MAX_DELAY); // 同時讀取卡片透過 MISO 回傳的 response 4 byte
 
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // CMD0+CMD8 都處理完, CS拉高結束這輪transaction
   printf("CMD8=%02X\n", r1_cmd8);
   for (int i = 0; i < 4; i++)
     printf("%02X ", cmd8_echo[i]);
   printf("\r\n");
+
+
+  uint8_t r1_cmd41 = 0xFF;
+  uint8_t r1_cmd55 = 0xFF;
+  for (int k = 0; k < 1000; k++) { // 外層: 重試整組 CMD55+CMD41
+    uint8_t cmd55[6] ={0x77, 0x00, 0x00, 0x00, 0x00, 0x01};
+    HAL_SPI_Transmit(&hspi3, cmd55, 6, HAL_MAX_DELAY);
+
+    for (int m = 0; m < 8; m++){
+        HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd55, 1, HAL_MAX_DELAY); // 回傳cmd55的 response byte
+        if (r1_cmd55 != 0xFF) break;
+    }
+
+    uint8_t cmd41[6] ={0x69, 0x40, 0x00, 0x00, 0x00, 0x01};
+    HAL_SPI_Transmit(&hspi3, cmd41, 6, HAL_MAX_DELAY);
+
+
+    for (int n = 0; n < 8; n++){
+        HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd41, 1, HAL_MAX_DELAY); // 回傳cmd41的 response byte
+        if (r1_cmd41 != 0xFF) break;
+    }
+
+    if (r1_cmd41 == 0x00) break;  // 卡片離開idle, 初始化完成
+
+    printf("ACMD41=%02X (retry %d)\r\n", r1_cmd41, k); // 這次重試失敗, 印出目前狀態繼續下一輪
+
+  }
+  printf("ACMD41 final=%02X\r\n", r1_cmd41);
+
+  uint8_t cmd58[6] = {0x7A, 0x00, 0x00, 0x00, 0x00, 0x01};
+  HAL_SPI_Transmit(&hspi3, cmd58, 6, HAL_MAX_DELAY);
+
+  uint8_t r1_cmd58 = 0xFF;
+  uint8_t cmd58_echo[4];
+  for (int x = 0; x < 8; x++){
+      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd58, 1, HAL_MAX_DELAY); // 回傳cmd58的 response byte
+      if (r1_cmd58 != 0xFF) break;
+  }
+  HAL_SPI_TransmitReceive(&hspi3, dummy, cmd58_echo, 4, HAL_MAX_DELAY); // 同時讀取卡片透過 MISO 回傳的 response 4 byte
+
+  printf("CMD58=%02X\n", r1_cmd58);
+  for (int i = 0; i < 4; i++)
+    printf("%02X ", cmd58_echo[i]);
+  printf("\r\n");
+
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
+
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */
