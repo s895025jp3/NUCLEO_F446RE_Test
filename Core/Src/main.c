@@ -130,7 +130,6 @@ int main(void)
   // SPI
   HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // CS 拉高: 卡片尚未被選取, 才能送 dummy clock
   uint8_t dummy[10];
-  uint8_t dummy[10];
   memset(dummy, 0xFF, sizeof(dummy));
   HAL_SPI_Transmit(&hspi3, dummy, 10, HAL_MAX_DELAY); // 送≥74個clock(10 byte=80 clock), 讓卡片完成開機、切換到SPI mode
 
@@ -139,16 +138,32 @@ int main(void)
   uint8_t cmd0[6] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x95}; // CMD0 (GO_IDLE_STATE): 0x40=start+cmd index0, 中間4 byte固定填0(無參數), 0x95=CMD0專用CRC7+stop bit
   HAL_SPI_Transmit(&hspi3, cmd0, 6, HAL_MAX_DELAY);
 
-  uint8_t r1 = 0xFF;
+  uint8_t tx_dummy = 0xFF;
+  uint8_t r1_cmd0 = 0xFF;
   for (int i = 0; i < 8; i++){
-      uint8_t tx = 0xFF;
-      HAL_SPI_TransmitReceive(&hspi3, &tx, &r1, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳的 response byte
-      //printf("attempt %d: %02X\r\n", i, r1);
-      if (r1 != 0xFF) break;   // 收到非 0xFF, 代表卡片已回應
+      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd0, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳的 response byte
+      if (r1_cmd0 != 0xFF) break;   // 收到非 0xFF, 代表卡片已回應
   }
+  if (r1_cmd0 != 0x01)
+    printf("CMD0 failed: %02X\r\n", r1_cmd0);
+  printf("CMD0=%02X\n", r1_cmd0);
 
-  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // 收到回應, 這次CMD0 transaction結束, CS拉高
-  printf("%02X\n", r1);
+  uint8_t cmd8[6] = {0x48, 0x00, 0x00, 0x01, 0xAA, 0x87};
+  HAL_SPI_Transmit(&hspi3, cmd8, 6, HAL_MAX_DELAY);
+
+  uint8_t r1_cmd8 = 0xFF;
+  uint8_t cmd8_echo[4];
+  for (int j = 0; j < 8; j++){
+      HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd8, 1, HAL_MAX_DELAY);
+      if (r1_cmd8 != 0xFF) break;
+  }
+  HAL_SPI_TransmitReceive(&hspi3, dummy, cmd8_echo, 4, HAL_MAX_DELAY); // 同時讀取卡片透過 MISO 回傳的 response 4 byte
+
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET); // CMD0+CMD8 都處理完, CS拉高結束這輪transaction
+  printf("CMD8=%02X\n", r1_cmd8);
+  for (int i = 0; i < 4; i++)
+    printf("%02X ", cmd8_echo[i]);
+  printf("\r\n");
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */
