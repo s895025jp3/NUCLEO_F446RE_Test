@@ -26,3 +26,7 @@
 | 2026/07/26 | app_oled.c/.h, main.c, ssd1306_conf.h, .cproject | Add: Integrate SSD1306 OLED via app_oled module, display text test | aff2f76 |
 | 2026/07/26 | app_oled.c/.h, main.c, ssd1306_conf.h | Add: OLED color-zone boundary test helper (yellow/blue split at y=16) | cc419e4 |
 | 2026/07/26 | app_bmp180.c/.h, app_oled.c/.h, main.c, .cproject | Add: Display BMP180 temperature/pressure on OLED | 53e280a |
+| 2026/08/01 | main.c, .ioc | Add: Enable SPI3, test SPI3 loopback communication | 7ad5462 |
+| 2026/08/01 | main.c | Add: Send SD card CMD0 over SPI3, verify R1 idle response | 14e03e9 |
+| 2026/08/01 | main.c | Add: Send SD card CMD8, verify R7 response (SDv2 detection) | 540e686 |
+| 2026/08/01 | main.c | Add: Send ACMD41 + CMD58 over SPI3, complete SD card SPI init sequence (SDHC confirmed) | e297182 |
