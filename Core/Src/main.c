@@ -129,8 +129,11 @@ int main(void)
   App_Oled_ReadData();
 
   //SPI 
-  DSTATUS res = disk_initialize(0);   // 0 = physical drive number
-  printf("disk_initialize: %d\r\n", res);
+  //DSTATUS res = disk_initialize(0);   // 0 = physical drive number
+  //printf("disk_initialize: %d\r\n", res);
+
+  FRESULT fr = f_mount(&USERFatFS, USERPath, 1);
+  printf("f_mount: %d\r\n", fr);
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
   /* USER CODE END 2 */

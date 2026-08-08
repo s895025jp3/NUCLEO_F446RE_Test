@@ -215,7 +215,60 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
-    return RES_OK;
+
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET); // CS拉低: 選取卡片, 準備送指令
+
+  uint8_t cmd17[6];
+  cmd17[0] = 0x51;
+  cmd17[1] = (uint8_t)(sector >> 24);
+  cmd17[2] = (uint8_t)(sector >> 16);
+  cmd17[3] = (uint8_t)(sector >> 8);
+  cmd17[4] = (uint8_t)(sector);
+  cmd17[5] = 0x01;
+
+  // 第一段: 讀 R1 (1 byte)
+  uint8_t tx_dummy = 0xFF;
+  uint8_t r1_cmd17 = 0xFF;
+
+  HAL_SPI_Transmit(&hspi3, cmd17, 6, HAL_MAX_DELAY);
+
+  for (int i = 0; i < 8; i++){
+    HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd17, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳 cmd17 的 response byte
+    if (r1_cmd17 != 0xFF) break; // 收到非 0xFF, 代表卡片已回應
+  }
+  
+  if (r1_cmd17 != 0x00) {
+    HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
+    return RES_ERROR;
+  }
+  // 成功的話不動CS, 繼續往下走
+
+  // 第二段: 等 Data Start Token (0xFE), 重試次數要多一點
+  uint8_t token = 0xFF;
+
+  for (int i = 0; i < 1000; i++){
+    HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &token, 1, HAL_MAX_DELAY);
+    if (token != 0xFF) break;
+  }
+
+  if (token != 0xFE) {
+    HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
+    return RES_ERROR;
+  }
+  
+  // 第三段: 讀真正的 512 byte 資料進 buff
+  uint8_t dummy_512[512];
+  memset(dummy_512, 0xFF, sizeof(dummy_512));
+
+  HAL_SPI_TransmitReceive(&hspi3, dummy_512, buff, 512, HAL_MAX_DELAY);
+
+  // 讀2 byte CRC丟棄, CS拉高, return RES_OK
+  uint8_t crc[2];
+  HAL_SPI_TransmitReceive(&hspi3, dummy_512, crc, 2, HAL_MAX_DELAY);  // dummy_512 已經是 512byte 的 0xFF, 前 2byte 夠用
+
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);
+
+  return RES_OK;
   /* USER CODE END READ */
 }
 
