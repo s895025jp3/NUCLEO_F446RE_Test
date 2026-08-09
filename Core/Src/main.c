@@ -29,6 +29,7 @@
 #include "app_bmp180.h"
 #include "app_oled.h"
 #include "diskio.h"
+#include "app_sdlog.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -132,33 +133,10 @@ int main(void)
   //DSTATUS res = disk_initialize(0);   // 0 = physical drive number
   //printf("disk_initialize: %d\r\n", res);
 
-  FRESULT fr = f_mount(&USERFatFS, USERPath, 1);
-  printf("f_mount: %d\r\n", fr);
-
-  FIL file;
-  // 寫入測試
-  fr = f_open(&file, "test.txt", FA_CREATE_ALWAYS | FA_WRITE);
-  printf("f_open(write): %d\r\n", fr);
-
-  fr = f_printf(&file, "Hello SD card\r\n");
-  printf("f_printf: %d\r\n", fr);
-
-  fr = f_close(&file);
-  printf("f_close: %d\r\n", fr);
-
-  // 讀回測試
-  char buf[64] = {0};
-  fr = f_open(&file, "test.txt", FA_READ);
-  printf("f_open(read): %d\r\n", fr);
-
-  UINT br;
-  fr = f_read(&file, buf, sizeof(buf) - 1, &br);
-  printf("f_read: %d, bytes read: %u\r\n", fr, br);
-  printf("content: %s\r\n", buf);
-
-  f_close(&file);
+  App_SdLog_Init();
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
+ 
   /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -175,6 +153,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     App_ButtonLed_Update();
+    App_SdLog_Update();
   }
   /* USER CODE END 3 */
 }
