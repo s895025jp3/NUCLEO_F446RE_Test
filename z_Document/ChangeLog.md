@@ -30,3 +30,7 @@
 | 2026/08/01 | main.c | Add: Send SD card CMD0 over SPI3, verify R1 idle response | 14e03e9 |
 | 2026/08/01 | main.c | Add: Send SD card CMD8, verify R7 response (SDv2 detection) | 540e686 |
 | 2026/08/01 | main.c | Add: Send ACMD41 + CMD58 over SPI3, complete SD card SPI init sequence (SDHC confirmed) | e297182 |
+| 2026/08/08 | user_diskio.c, main.h | Refactor: Move SD card SPI init sequence into user_diskio.c USER_initialize() | 2ebbd31 |
+| 2026/08/08 | user_diskio.c, main.c | Add: Implement USER_read() (CMD17) | 7d1586a |
+| 2026/08/08 | user_diskio.c | Add: Implement USER_write() (CMD24) and USER_ioctl() (CTRL_SYNC), verify file read/write via FatFs | e8418f5 |
+| 2026/08/08 | app_sdlog.c/.h, app_button_led.c, app_oled.h, main.c | Add: Implement SD card logging (app_sdlog), triggered by button + 5s timer | e85a56f |
