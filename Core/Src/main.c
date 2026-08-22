@@ -49,29 +49,35 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi3;
+DMA_HandleTypeDef hdma_spi3_tx;
+DMA_HandleTypeDef hdma_spi3_rx;
 
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+// Private Variables
+volatile uint8_t dma_tx_done = 0;
+volatile uint8_t dma_rx_done = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI3_Init(void);
 /* USER CODE BEGIN PFP */
+// Private Function Prototypes
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-HAL_StatusTypeDef i2c_status; 
+HAL_StatusTypeDef i2c_status;
 /* USER CODE END 0 */
 
 /**
@@ -103,6 +109,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   MX_SPI3_Init();
@@ -132,8 +139,21 @@ int main(void)
   //SPI 
   //DSTATUS res = disk_initialize(0);   // 0 = physical drive number
   //printf("disk_initialize: %d\r\n", res);
-
   App_SdLog_Init();
+
+  //DMA
+  //TX
+  uint8_t dma_test_buf[4] = {0x11, 0x22, 0x33, 0x44};
+  HAL_SPI_Transmit_DMA(&hspi3, dma_test_buf, sizeof(dma_test_buf));
+  while (!dma_tx_done) { } // 忙等 DMA 完成(之後 USER_write 也會用類似模式,但要加 timeout)
+  printf("DMA SPI3 test done\r\n"); // 在前景印,不會跟 main 自己的其他 printf 衝突
+  
+  //RX
+  uint8_t dma_rx_buf[4] = {0};
+  HAL_SPI_Receive_DMA(&hspi3, dma_rx_buf, sizeof(dma_rx_buf));
+  while (!dma_rx_done) { }
+  printf("DMA RX SPI3 test done: %02X %02X %02X %02X\r\n",
+       dma_rx_buf[0], dma_rx_buf[1], dma_rx_buf[2], dma_rx_buf[3]);
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
  
@@ -311,6 +331,25 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -352,6 +391,19 @@ int __io_putchar(int ch)
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
 }
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == SPI3){
+    dma_tx_done = 1;   // 只做這件事,不 printf
+  }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == SPI3){
+    dma_rx_done = 1;
+  }
+}
+
 
 /* USER CODE END 4 */
 
