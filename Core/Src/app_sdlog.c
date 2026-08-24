@@ -67,4 +67,16 @@ void App_SdLog_WriteOnce(void) // 讀BMP180 → 更新OLED → 開檔append寫�
 
     fr = f_close(&file);
     printf("f_close: %d\r\n", fr);
+
+    // DMA 讀回驗證: 重新打開同一個檔案, 讀出最後寫入的內容, 印出來肉眼比對
+    // FIL rfile;
+    // if (f_open(&rfile, "log3.csv", FA_READ) == FR_OK) {
+    //     f_lseek(&rfile, f_size(&rfile) > 100 ? f_size(&rfile) - 100 : 0); // 跳到檔案接近結尾處(避免從頭讀整個大檔案)
+    //     char rbuf[128];
+    //     UINT br;
+    //     f_read(&rfile, rbuf, sizeof(rbuf) - 1, &br);
+    //     rbuf[br] = '\0';
+    //     printf("Readback (last bytes): %s\r\n", rbuf);
+    //     f_close(&rfile);
+    // }
 }
