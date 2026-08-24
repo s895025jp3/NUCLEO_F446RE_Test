@@ -48,6 +48,28 @@
 static volatile DSTATUS Stat = STA_NOINIT;
 static uint8_t CardType;
 
+static volatile uint8_t dma_tx_done = 0;
+static volatile uint8_t dma_rx_done = 0;
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == SPI3){
+    dma_tx_done = 1;   // 只做這件事,不 printf
+  }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == SPI3){
+    dma_rx_done = 1;
+  }
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == SPI3){
+    dma_rx_done = 1;
+  }
+}
+
+
 /* CS 控制小工具 ---------------------------------------------------------------
    SD 卡規格要求每次 CS 狀態改變後要多送 8 個 clock(1 個 0xFF), 卡片才有時間
    把 DO 腳驅動起來(拉低前)或釋放成高阻抗(拉高後)。少了這個 dummy byte, 單獨
@@ -301,12 +323,27 @@ DRESULT USER_read (
     SD_Deselect();
     return RES_ERROR;
   }
-  
+
   // 第三段: 讀真正的 512 byte 資料進 buff
   uint8_t dummy_512[512];
   memset(dummy_512, 0xFF, sizeof(dummy_512));
 
-  HAL_SPI_TransmitReceive(&hspi3, dummy_512, buff, 512, HAL_MAX_DELAY);
+  //Blocking
+  // HAL_SPI_TransmitReceive(&hspi3, dummy_512, buff, 512, HAL_MAX_DELAY);
+  
+  //DMA
+  dma_rx_done = 0;   // 啟動前先清旗標,避免用到上一次殘留的值
+  HAL_SPI_TransmitReceive_DMA(&hspi3, dummy_512, buff, 512);
+  
+  uint32_t start = HAL_GetTick();
+  while (!dma_rx_done) {
+    if (HAL_GetTick() - start > 500) { // timeout 500ms, 可依實際情況調整
+      HAL_SPI_Abort(&hspi3); // 中止還在進行的 DMA 傳輸, 避免殘留狀態影響下一次
+      SD_Deselect();
+      printf("USER_read: DMA RX timeout\r\n");
+      return RES_ERROR;
+    }
+  }
 
   // 讀2 byte CRC丟棄, CS拉高, return RES_OK
   uint8_t crc_read[2];
@@ -380,8 +417,24 @@ DRESULT USER_write (
   uint8_t token_write = 0xFE;
   HAL_SPI_Transmit(&hspi3, &token_write, 1, HAL_MAX_DELAY); // 主動送出 Data Token —— 送 1 個 byte 0xFE
 
-  // 第三段: 送 buff 512 byte 資料 
-  HAL_SPI_Transmit(&hspi3, (uint8_t*)buff, 512, HAL_MAX_DELAY);
+  // 第三段: 送 buff 512 byte 資料
+  //Blocking
+  // HAL_SPI_Transmit(&hspi3, (uint8_t*)buff, 512, HAL_MAX_DELAY);
+
+  //DMA
+  dma_tx_done = 0;   // 啟動前先清旗標,避免用到上一次殘留的值
+  HAL_SPI_Transmit_DMA(&hspi3, (uint8_t*)buff, 512);
+
+  uint32_t start = HAL_GetTick();
+  while (!dma_tx_done) {
+    if (HAL_GetTick() - start > 500) {   // timeout 500ms
+      HAL_SPI_Abort(&hspi3);
+      SD_Deselect();
+      printf("USER_write: DMA TX timeout\r\n");
+      return RES_ERROR;
+    }
+  }
+
 
   // 送 2 byte CRC丟棄, CS拉高, return RES_OK
   uint8_t crc_write[2]={0xFF, 0xFF};

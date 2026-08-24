@@ -59,8 +59,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 // Private Variables
-volatile uint8_t dma_tx_done = 0;
-volatile uint8_t dma_rx_done = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -142,18 +141,7 @@ int main(void)
   App_SdLog_Init();
 
   //DMA
-  //TX
-  uint8_t dma_test_buf[4] = {0x11, 0x22, 0x33, 0x44};
-  HAL_SPI_Transmit_DMA(&hspi3, dma_test_buf, sizeof(dma_test_buf));
-  while (!dma_tx_done) { } // 忙等 DMA 完成(之後 USER_write 也會用類似模式,但要加 timeout)
-  printf("DMA SPI3 test done\r\n"); // 在前景印,不會跟 main 自己的其他 printf 衝突
-  
-  //RX
-  uint8_t dma_rx_buf[4] = {0};
-  HAL_SPI_Receive_DMA(&hspi3, dma_rx_buf, sizeof(dma_rx_buf));
-  while (!dma_rx_done) { }
-  printf("DMA RX SPI3 test done: %02X %02X %02X %02X\r\n",
-       dma_rx_buf[0], dma_rx_buf[1], dma_rx_buf[2], dma_rx_buf[3]);
+  //刪除測試code
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
  
@@ -390,18 +378,6 @@ int __io_putchar(int ch)
 {
   HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
   return ch;
-}
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
-  if (hspi->Instance == SPI3){
-    dma_tx_done = 1;   // 只做這件事,不 printf
-  }
-}
-
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
-  if (hspi->Instance == SPI3){
-    dma_rx_done = 1;
-  }
 }
 
 
