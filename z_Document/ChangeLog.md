@@ -34,3 +34,5 @@
 | 2026/08/08 | user_diskio.c, main.c | Add: Implement USER_read() (CMD17) | 7d1586a |
 | 2026/08/08 | user_diskio.c | Add: Implement USER_write() (CMD24) and USER_ioctl() (CTRL_SYNC), verify file read/write via FatFs | e8418f5 |
 | 2026/08/08 | app_sdlog.c/.h, app_button_led.c, app_oled.h, main.c | Add: Implement SD card logging (app_sdlog), triggered by button + 5s timer | e85a56f |
+| 2026/08/22 | main.c, .ioc, stm32f4xx_it.c/.h, stm32f4xx_hal_msp.c, STM32F446RETX_FLASH.ld | Add: Enable SPI3 DMA (RX Stream0/TX Stream5), verify Tx/Rx DMA complete via interrupt callback | 79750c2 |
+| 2026/08/24 | user_diskio.c, main.c | Add: Convert USER_read/USER_write 512-byte SPI3 transfer to DMA, use TxRxCpltCallback for TransmitReceive_DMA completion | e96102d |
