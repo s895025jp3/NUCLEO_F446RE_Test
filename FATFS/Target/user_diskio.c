@@ -304,7 +304,7 @@ DRESULT USER_read (
     HAL_SPI_TransmitReceive(&hspi3, &tx_dummy, &r1_cmd17, 1, HAL_MAX_DELAY); // 送出 0xFF 當作 dummy byte, 同時讀取卡片透過 MISO 回傳 cmd17 的 response byte
     if (r1_cmd17 != 0xFF) break; // 收到非 0xFF, 代表卡片已回應
   }
-  
+
   if (r1_cmd17 != 0x00) {
     SD_Deselect();
     return RES_ERROR;
