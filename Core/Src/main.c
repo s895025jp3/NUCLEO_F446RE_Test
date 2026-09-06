@@ -59,12 +59,12 @@ DMA_HandleTypeDef hdma_spi3_rx;
 
 UART_HandleTypeDef huart2;
 
-/* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
+/* Definitions for SdLogTask */
+osThreadId_t SdLogTaskHandle;
+const osThreadAttr_t SdLogTask_attributes = {
+  .name = "SdLogTask",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for LedTask */
 osThreadId_t LedTaskHandle;
@@ -87,13 +87,6 @@ const osThreadAttr_t OledTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for SdLogTask */
-osThreadId_t SdLogTaskHandle;
-const osThreadAttr_t SdLogTask_attributes = {
-  .name = "SdLogTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal,
-};
 /* Definitions for UartCmdTask */
 osThreadId_t UartCmdTaskHandle;
 const osThreadAttr_t UartCmdTask_attributes = {
@@ -113,11 +106,10 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI3_Init(void);
-void StartDefaultTask(void *argument);
+void StartSdLogTask(void *argument);
 void StartLedTask(void *argument);
 void StartSensorTask(void *argument);
 void StartOledTask(void *argument);
-void StartSdLogTask(void *argument);
 void StartUartCmdTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -217,8 +209,8 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  /* creation of SdLogTask */
+  SdLogTaskHandle = osThreadNew(StartSdLogTask, NULL, &SdLogTask_attributes);
 
   /* creation of LedTask */
   LedTaskHandle = osThreadNew(StartLedTask, NULL, &LedTask_attributes);
@@ -228,9 +220,6 @@ int main(void)
 
   /* creation of OledTask */
   OledTaskHandle = osThreadNew(StartOledTask, NULL, &OledTask_attributes);
-
-  /* creation of SdLogTask */
-  SdLogTaskHandle = osThreadNew(StartSdLogTask, NULL, &SdLogTask_attributes);
 
   /* creation of UartCmdTask */
   UartCmdTaskHandle = osThreadNew(StartUartCmdTask, NULL, &UartCmdTask_attributes);
@@ -243,16 +232,16 @@ int main(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   osThreadId_t handles[] = {
-    defaultTaskHandle, LedTaskHandle, SensorTaskHandle,
-    OledTaskHandle,    SdLogTaskHandle, UartCmdTaskHandle
+    SdLogTaskHandle, LedTaskHandle, SensorTaskHandle,
+    OledTaskHandle, UartCmdTaskHandle
   };
 
   const char *names[] = {
-    "defaultTask", "LedTask", "SensorTask",
-    "OledTask",    "SdLogTask", "UartCmdTask"
+    "SdLogTask", "LedTask", "SensorTask",
+    "OledTask", "UartCmdTask"
   };
 
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 5; i++)
   {
     if (handles[i] == NULL)
       printf("Task create FAILED: %s\r\n", names[i]);
@@ -500,21 +489,21 @@ int __io_putchar(int ch)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartSdLogTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument)
+* @brief Function implementing the SdLogTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSdLogTask */
+void StartSdLogTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
     App_SdLog_Update();
-    osDelay(10); // RTOS3
+    osDelay(100); // RTOS3
   }
   /* USER CODE END 5 */
 }
@@ -576,24 +565,6 @@ void StartOledTask(void *argument)
     osDelay(1000);
   }
   /* USER CODE END StartOledTask */
-}
-
-/* USER CODE BEGIN Header_StartSdLogTask */
-/**
-* @brief Function implementing the SdLogTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartSdLogTask */
-void StartSdLogTask(void *argument)
-{
-  /* USER CODE BEGIN StartSdLogTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartSdLogTask */
 }
 
 /* USER CODE BEGIN Header_StartUartCmdTask */
