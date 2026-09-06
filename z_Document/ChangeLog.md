@@ -37,3 +37,6 @@
 | 2026/08/22 | main.c, .ioc, stm32f4xx_it.c/.h, stm32f4xx_hal_msp.c, STM32F446RETX_FLASH.ld | Add: Enable SPI3 DMA (RX Stream0/TX Stream5), verify Tx/Rx DMA complete via interrupt callback | 79750c2 |
 | 2026/08/24 | user_diskio.c, main.c | Add: Convert USER_read/USER_write 512-byte SPI3 transfer to DMA, use TxRxCpltCallback for TransmitReceive_DMA completion | e96102d |
 | 2026/09/05 | main.c, .ioc, FreeRTOSConfig.h, freertos.c, stm32f4xx_hal_timebase_tim.c, stm32f4xx_it.c/.h, stm32f4xx_hal_msp.c, user_diskio.c, Middlewares/FreeRTOS | Add: Enable FreeRTOS (CMSIS-V2, TIM6 timebase), verify scheduler via LED blink task | eaa10d7 |
+| 2026/09/05 | main.c, .ioc, FreeRTOSConfig.h, freertos.c | Add: Move main loop polling into StartDefaultTask | 0581383 |
+| 2026/09/06 | main.c, .ioc, FreeRTOSConfig.h, app_button_led.c/.h, app_uart_cmd.c/.h, app_sdlog.c | Add: Split polling into LED/Sensor/OLED/UART tasks | 9e3d5c2 |
+| 2026/09/06 | main.c, .ioc | Refactor: Move SD logging into SdLogTask, remove defaultTask | a202449 |
