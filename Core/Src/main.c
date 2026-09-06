@@ -66,6 +66,41 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for LedTask */
+osThreadId_t LedTaskHandle;
+const osThreadAttr_t LedTask_attributes = {
+  .name = "LedTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for SensorTask */
+osThreadId_t SensorTaskHandle;
+const osThreadAttr_t SensorTask_attributes = {
+  .name = "SensorTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for OledTask */
+osThreadId_t OledTaskHandle;
+const osThreadAttr_t OledTask_attributes = {
+  .name = "OledTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for SdLogTask */
+osThreadId_t SdLogTaskHandle;
+const osThreadAttr_t SdLogTask_attributes = {
+  .name = "SdLogTask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
+/* Definitions for UartCmdTask */
+osThreadId_t UartCmdTaskHandle;
+const osThreadAttr_t UartCmdTask_attributes = {
+  .name = "UartCmdTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 // Private Variables
 
@@ -79,6 +114,11 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI3_Init(void);
 void StartDefaultTask(void *argument);
+void StartLedTask(void *argument);
+void StartSensorTask(void *argument);
+void StartOledTask(void *argument);
+void StartSdLogTask(void *argument);
+void StartUartCmdTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 // Private Function Prototypes
@@ -180,6 +220,21 @@ int main(void)
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
+  /* creation of LedTask */
+  LedTaskHandle = osThreadNew(StartLedTask, NULL, &LedTask_attributes);
+
+  /* creation of SensorTask */
+  SensorTaskHandle = osThreadNew(StartSensorTask, NULL, &SensorTask_attributes);
+
+  /* creation of OledTask */
+  OledTaskHandle = osThreadNew(StartOledTask, NULL, &OledTask_attributes);
+
+  /* creation of SdLogTask */
+  SdLogTaskHandle = osThreadNew(StartSdLogTask, NULL, &SdLogTask_attributes);
+
+  /* creation of UartCmdTask */
+  UartCmdTaskHandle = osThreadNew(StartUartCmdTask, NULL, &UartCmdTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
@@ -187,6 +242,22 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
+  osThreadId_t handles[] = {
+    defaultTaskHandle, LedTaskHandle, SensorTaskHandle,
+    OledTaskHandle,    SdLogTaskHandle, UartCmdTaskHandle
+  };
+
+  const char *names[] = {
+    "defaultTask", "LedTask", "SensorTask",
+    "OledTask",    "SdLogTask", "UartCmdTask"
+  };
+
+  for (int i = 0; i < 6; i++)
+  {
+    if (handles[i] == NULL)
+      printf("Task create FAILED: %s\r\n", names[i]);
+  }
+  printf("Task check done.\r\n");
   /* USER CODE END RTOS_EVENTS */
 
   /* Initialize leds */
@@ -442,11 +513,106 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    App_ButtonLed_Update();
     App_SdLog_Update();
-    osDelay(10);
+    osDelay(10); // RTOS3
   }
   /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartLedTask */
+/**
+* @brief Function implementing the LedTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLedTask */
+void StartLedTask(void *argument)
+{
+  /* USER CODE BEGIN StartLedTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    App_ButtonLed_Toggle();
+    osDelay(500);
+  }
+  /* USER CODE END StartLedTask */
+}
+
+/* USER CODE BEGIN Header_StartSensorTask */
+/**
+* @brief Function implementing the SensorTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void *argument)
+{
+  /* USER CODE BEGIN StartSensorTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    App_Bmp180_ReadData();
+    osDelay(1000);
+  }
+  /* USER CODE END StartSensorTask */
+}
+
+/* USER CODE BEGIN Header_StartOledTask */
+/**
+* @brief Function implementing the OledTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartOledTask */
+void StartOledTask(void *argument)
+{
+  /* USER CODE BEGIN StartOledTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    float temp = App_Bmp180_GetTemperature() / 10.f;
+    float pres = App_Bmp180_GetPressure()   / 100.f;
+    App_Oled_UpdateWeather(temp, pres);
+    osDelay(1000);
+  }
+  /* USER CODE END StartOledTask */
+}
+
+/* USER CODE BEGIN Header_StartSdLogTask */
+/**
+* @brief Function implementing the SdLogTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSdLogTask */
+void StartSdLogTask(void *argument)
+{
+  /* USER CODE BEGIN StartSdLogTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartSdLogTask */
+}
+
+/* USER CODE BEGIN Header_StartUartCmdTask */
+/**
+* @brief Function implementing the UartCmdTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartUartCmdTask */
+void StartUartCmdTask(void *argument)
+{
+  /* USER CODE BEGIN StartUartCmdTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    App_Uart_CmdTask_Poll();
+    osDelay(1);
+  }
+  /* USER CODE END StartUartCmdTask */
 }
 
 /**
