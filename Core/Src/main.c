@@ -63,7 +63,7 @@ UART_HandleTypeDef huart2;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
@@ -161,7 +161,6 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
-  printf("kernel state=%d\r\n", osKernelGetState());
 
   /* USER CODE END RTOS_MUTEX */
 
@@ -183,7 +182,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  printf("defaultTaskHandle=%p\r\n", defaultTaskHandle);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -209,8 +208,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    App_ButtonLed_Update();
-    App_SdLog_Update();
   }
   /* USER CODE END 3 */
 }
@@ -445,8 +442,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    BSP_LED_Toggle(LED2);
-    osDelay(500);
+    App_ButtonLed_Update();
+    App_SdLog_Update();
+    osDelay(10);
   }
   /* USER CODE END 5 */
 }
