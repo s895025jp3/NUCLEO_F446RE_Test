@@ -94,6 +94,11 @@ const osThreadAttr_t UartCmdTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for I2cMutex */
+osMutexId_t I2cMutexHandle;
+const osMutexAttr_t I2cMutex_attributes = {
+  .name = "I2cMutex"
+};
 /* USER CODE BEGIN PV */
 // Private Variables
 
@@ -190,6 +195,9 @@ int main(void)
 
   /* Init scheduler */
   osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of I2cMutex */
+  I2cMutexHandle = osMutexNew(&I2cMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -233,15 +241,15 @@ int main(void)
   /* add events, ... */
   osThreadId_t handles[] = {
     SdLogTaskHandle, LedTaskHandle, SensorTaskHandle,
-    OledTaskHandle, UartCmdTaskHandle
+    OledTaskHandle, UartCmdTaskHandle, I2cMutexHandle
   };
 
   const char *names[] = {
     "SdLogTask", "LedTask", "SensorTask",
-    "OledTask", "UartCmdTask"
+    "OledTask", "UartCmdTask", "I2cMutex"
   };
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 6; i++)
   {
     if (handles[i] == NULL)
       printf("Task create FAILED: %s\r\n", names[i]);
@@ -540,7 +548,9 @@ void StartSensorTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    osMutexAcquire(I2cMutexHandle, osWaitForever);
     App_Bmp180_ReadData();
+    osMutexRelease(I2cMutexHandle);
     osDelay(1000);
   }
   /* USER CODE END StartSensorTask */
@@ -561,7 +571,10 @@ void StartOledTask(void *argument)
   {
     float temp = App_Bmp180_GetTemperature() / 10.f;
     float pres = App_Bmp180_GetPressure()   / 100.f;
+
+    osMutexAcquire(I2cMutexHandle, osWaitForever);
     App_Oled_UpdateWeather(temp, pres);
+    osMutexRelease(I2cMutexHandle);
     osDelay(1000);
   }
   /* USER CODE END StartOledTask */
