@@ -40,3 +40,6 @@
 | 2026/09/05 | main.c, .ioc, FreeRTOSConfig.h, freertos.c | Add: Move main loop polling into StartDefaultTask | 0581383 |
 | 2026/09/06 | main.c, .ioc, FreeRTOSConfig.h, app_button_led.c/.h, app_uart_cmd.c/.h, app_sdlog.c | Add: Split polling into LED/Sensor/OLED/UART tasks | 9e3d5c2 |
 | 2026/09/06 | main.c, .ioc | Refactor: Move SD logging into SdLogTask, remove defaultTask | a202449 |
+| 2026/09/12 | app_bmp180.c/.h, app_sdlog.c | Add: I2C failure counter for BMP180 read | 3561ea5 |
+| 2026/09/12 | main.c, .ioc | Add: Protect shared I2C1 bus with mutex | 689dc50 |
+| 2026/09/12 | main.c, app_sdlog.c | Add: Measure LedTask wake-up jitter | 1a9e22a |
