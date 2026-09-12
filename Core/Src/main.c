@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -49,6 +50,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi3;
@@ -57,9 +59,49 @@ DMA_HandleTypeDef hdma_spi3_rx;
 
 UART_HandleTypeDef huart2;
 
+/* Definitions for SdLogTask */
+osThreadId_t SdLogTaskHandle;
+const osThreadAttr_t SdLogTask_attributes = {
+  .name = "SdLogTask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
+/* Definitions for LedTask */
+osThreadId_t LedTaskHandle;
+const osThreadAttr_t LedTask_attributes = {
+  .name = "LedTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for SensorTask */
+osThreadId_t SensorTaskHandle;
+const osThreadAttr_t SensorTask_attributes = {
+  .name = "SensorTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for OledTask */
+osThreadId_t OledTaskHandle;
+const osThreadAttr_t OledTask_attributes = {
+  .name = "OledTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for UartCmdTask */
+osThreadId_t UartCmdTaskHandle;
+const osThreadAttr_t UartCmdTask_attributes = {
+  .name = "UartCmdTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for I2cMutex */
+osMutexId_t I2cMutexHandle;
+const osMutexAttr_t I2cMutex_attributes = {
+  .name = "I2cMutex"
+};
 /* USER CODE BEGIN PV */
 // Private Variables
-
+volatile uint32_t g_led_max_jitter = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,6 +111,12 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI3_Init(void);
+void StartSdLogTask(void *argument);
+void StartLedTask(void *argument);
+void StartSensorTask(void *argument);
+void StartOledTask(void *argument);
+void StartUartCmdTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 // Private Function Prototypes
 
@@ -140,12 +188,77 @@ int main(void)
   //printf("disk_initialize: %d\r\n", res);
   App_SdLog_Init();
 
-  //DMA
-  //刪除測試code
 
   printf("Type 'led on' or 'led off' to control LED2\r\n");
  
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of I2cMutex */
+  I2cMutexHandle = osMutexNew(&I2cMutex_attributes);
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of SdLogTask */
+  SdLogTaskHandle = osThreadNew(StartSdLogTask, NULL, &SdLogTask_attributes);
+
+  /* creation of LedTask */
+  LedTaskHandle = osThreadNew(StartLedTask, NULL, &LedTask_attributes);
+
+  /* creation of SensorTask */
+  SensorTaskHandle = osThreadNew(StartSensorTask, NULL, &SensorTask_attributes);
+
+  /* creation of OledTask */
+  OledTaskHandle = osThreadNew(StartOledTask, NULL, &OledTask_attributes);
+
+  /* creation of UartCmdTask */
+  UartCmdTaskHandle = osThreadNew(StartUartCmdTask, NULL, &UartCmdTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  osThreadId_t handles[] = {
+    SdLogTaskHandle, LedTaskHandle, SensorTaskHandle,
+    OledTaskHandle, UartCmdTaskHandle, I2cMutexHandle
+  };
+
+  const char *names[] = {
+    "SdLogTask", "LedTask", "SensorTask",
+    "OledTask", "UartCmdTask", "I2cMutex"
+  };
+
+  for (int i = 0; i < 6; i++)
+  {
+    if (handles[i] == NULL)
+      printf("Task create FAILED: %s\r\n", names[i]);
+  }
+  printf("Task check done.\r\n");
+
+  //osThreadSetPriority(LedTaskHandle, osPriorityLow);   // Run 2 對照組：jitter 0 → 224 ms
+
+  /* USER CODE END RTOS_EVENTS */
 
   /* Initialize leds */
   BSP_LED_Init(LED2);
@@ -153,15 +266,19 @@ int main(void)
   /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
   BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  // osKernelStart() 後面都不會被執行
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    App_ButtonLed_Update();
-    App_SdLog_Update();
   }
   /* USER CODE END 3 */
 }
@@ -329,10 +446,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
 
 }
@@ -382,6 +499,141 @@ int __io_putchar(int ch)
 
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartSdLogTask */
+/**
+* @brief Function implementing the SdLogTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSdLogTask */
+void StartSdLogTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    App_SdLog_Update();
+    osDelay(100); // RTOS3
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartLedTask */
+/**
+* @brief Function implementing the LedTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLedTask */
+void StartLedTask(void *argument)
+{
+  /* USER CODE BEGIN StartLedTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    static uint32_t last = 0;
+    uint32_t now = HAL_GetTick();
+
+    if (last != 0)
+    {
+      uint32_t delta = now - last;
+      if (delta > 500 && (delta - 500) > g_led_max_jitter)
+        g_led_max_jitter = delta - 500;
+    }
+    last = now;
+
+    App_ButtonLed_Toggle();
+    osDelay(500);
+  }
+  /* USER CODE END StartLedTask */
+}
+
+/* USER CODE BEGIN Header_StartSensorTask */
+/**
+* @brief Function implementing the SensorTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void *argument)
+{
+  /* USER CODE BEGIN StartSensorTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osMutexAcquire(I2cMutexHandle, osWaitForever);
+    App_Bmp180_ReadData();
+    osMutexRelease(I2cMutexHandle);
+    osDelay(1000);
+  }
+  /* USER CODE END StartSensorTask */
+}
+
+/* USER CODE BEGIN Header_StartOledTask */
+/**
+* @brief Function implementing the OledTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartOledTask */
+void StartOledTask(void *argument)
+{
+  /* USER CODE BEGIN StartOledTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    float temp = App_Bmp180_GetTemperature() / 10.f;
+    float pres = App_Bmp180_GetPressure()   / 100.f;
+
+    osMutexAcquire(I2cMutexHandle, osWaitForever);
+    App_Oled_UpdateWeather(temp, pres);
+    osMutexRelease(I2cMutexHandle);
+    osDelay(1000);
+  }
+  /* USER CODE END StartOledTask */
+}
+
+/* USER CODE BEGIN Header_StartUartCmdTask */
+/**
+* @brief Function implementing the UartCmdTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartUartCmdTask */
+void StartUartCmdTask(void *argument)
+{
+  /* USER CODE BEGIN StartUartCmdTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    App_Uart_CmdTask_Poll();
+    osDelay(1);
+  }
+  /* USER CODE END StartUartCmdTask */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

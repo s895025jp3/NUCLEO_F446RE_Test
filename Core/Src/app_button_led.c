@@ -35,6 +35,13 @@ void App_ButtonLed_Update(void) // "主迴圈每輪呼叫，依 flag 決定 LED 
   }
 }
 
+void App_ButtonLed_Toggle(void)   // 給 LedTask 用，週期由 osDelay 決定
+{
+  if (s_led_blinking == 1)  BSP_LED_Toggle(LED2);
+  else                      BSP_LED_Off(LED2);
+}
+
+
 void App_ButtonLed_SetBlinking(uint8_t LedState) // "供外部 UART 指令，設定閃爍模式" 2026/07/12 [ADD] by s895025.
 {
   if (LedState == 0)

@@ -8,6 +8,9 @@ uint32_t Bmp180_UP_buf32;
 int32_t Bmp180_B5;
 static int32_t Bmp180_Temperature, Bmp180_Pressure;
 
+uint32_t g_i2c_ok = 0;
+uint32_t g_i2c_fail = 0;
+
 typedef struct
 {
     int16_t Bmp180_AC1;
@@ -40,8 +43,11 @@ void App_Bmp180_ReadChipId()
 
     Bmp180_ChipId_status = HAL_I2C_Mem_Read(&hi2c1, 0x77 << 1, 0xD0, I2C_MEMADD_SIZE_8BIT, &Bmp180_ChipId, 1, 100);// 讀取 Register Address 的 reset state(唯讀,用於驗證通訊)
     if (Bmp180_ChipId_status == HAL_OK)                                                                            // I2C_MEMADD_SIZE_8BIT:存取的暫存器位址大小
-    {                                                                                                              // 1:要讀的資料內容大小        
+    {             
+        g_i2c_ok++;                                                                                     // 1:要讀的資料內容大小        
         printf("Bmp180 chip-id: %02X\r\n", Bmp180_ChipId);
+    } else {
+        g_i2c_fail++;
     }
 }
 
