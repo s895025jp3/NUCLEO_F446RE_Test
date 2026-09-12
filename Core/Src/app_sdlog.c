@@ -5,6 +5,8 @@
 #include "app_bmp180.h"
 //#include "app_oled.h"
 
+extern volatile uint32_t g_led_max_jitter;
+
 static volatile uint8_t s_writeRequested = 0;
 static uint8_t s_mounted = 0;
 
@@ -65,4 +67,5 @@ void App_SdLog_WriteOnce(void) // 讀BMP180 → 更新OLED → 開檔append寫�
     fr = f_close(&file);
     printf("f_close: %d\r\n", fr);
     printf("I2C: ok=%lu fail=%lu\r\n", g_i2c_ok, g_i2c_fail);
+    printf("LED max jitter: %lu ms\r\n", g_led_max_jitter);
 }

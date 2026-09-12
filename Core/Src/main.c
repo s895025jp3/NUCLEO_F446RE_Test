@@ -101,7 +101,7 @@ const osMutexAttr_t I2cMutex_attributes = {
 };
 /* USER CODE BEGIN PV */
 // Private Variables
-
+volatile uint32_t g_led_max_jitter = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -255,6 +255,9 @@ int main(void)
       printf("Task create FAILED: %s\r\n", names[i]);
   }
   printf("Task check done.\r\n");
+
+  //osThreadSetPriority(LedTaskHandle, osPriorityLow);   // Run 2 對照組：jitter 0 → 224 ms
+
   /* USER CODE END RTOS_EVENTS */
 
   /* Initialize leds */
@@ -529,6 +532,17 @@ void StartLedTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
+    static uint32_t last = 0;
+    uint32_t now = HAL_GetTick();
+
+    if (last != 0)
+    {
+      uint32_t delta = now - last;
+      if (delta > 500 && (delta - 500) > g_led_max_jitter)
+        g_led_max_jitter = delta - 500;
+    }
+    last = now;
+
     App_ButtonLed_Toggle();
     osDelay(500);
   }
