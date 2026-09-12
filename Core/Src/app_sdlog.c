@@ -64,4 +64,5 @@ void App_SdLog_WriteOnce(void) // 讀BMP180 → 更新OLED → 開檔append寫�
 
     fr = f_close(&file);
     printf("f_close: %d\r\n", fr);
+    printf("I2C: ok=%lu fail=%lu\r\n", g_i2c_ok, g_i2c_fail);
 }
