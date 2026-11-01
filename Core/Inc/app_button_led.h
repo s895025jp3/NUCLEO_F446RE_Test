@@ -6,5 +6,7 @@
 void App_ButtonLed_Update(void);
 void App_ButtonLed_Toggle(void);
 void App_ButtonLed_SetBlinking(uint8_t LedState);
+void App_ButtonLed_OnPress(void);
+void App_ButtonLed_DebugPrint(void); // [DEBUG]
 
 #endif

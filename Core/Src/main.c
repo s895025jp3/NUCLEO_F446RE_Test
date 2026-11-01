@@ -94,10 +94,22 @@ const osThreadAttr_t UartCmdTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for ButtonTask */
+osThreadId_t ButtonTaskHandle;
+const osThreadAttr_t ButtonTask_attributes = {
+  .name = "ButtonTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
+};
 /* Definitions for I2cMutex */
 osMutexId_t I2cMutexHandle;
 const osMutexAttr_t I2cMutex_attributes = {
   .name = "I2cMutex"
+};
+/* Definitions for ButtonSem */
+osSemaphoreId_t ButtonSemHandle;
+const osSemaphoreAttr_t ButtonSem_attributes = {
+  .name = "ButtonSem"
 };
 /* USER CODE BEGIN PV */
 // Private Variables
@@ -116,6 +128,7 @@ void StartLedTask(void *argument);
 void StartSensorTask(void *argument);
 void StartOledTask(void *argument);
 void StartUartCmdTask(void *argument);
+void StartButtonTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 // Private Function Prototypes
@@ -204,6 +217,10 @@ int main(void)
 
   /* USER CODE END RTOS_MUTEX */
 
+  /* Create the semaphores(s) */
+  /* creation of ButtonSem */
+  ButtonSemHandle = osSemaphoreNew(1, 1, &ButtonSem_attributes);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
@@ -231,6 +248,9 @@ int main(void)
 
   /* creation of UartCmdTask */
   UartCmdTaskHandle = osThreadNew(StartUartCmdTask, NULL, &UartCmdTask_attributes);
+
+  /* creation of ButtonTask */
+  ButtonTaskHandle = osThreadNew(StartButtonTask, NULL, &ButtonTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -608,9 +628,38 @@ void StartUartCmdTask(void *argument)
   for(;;)
   {
     App_Uart_CmdTask_Poll();
+    App_ButtonLed_DebugPrint(); // [DEBUG] 量測彈跳用，測完可刪除
     osDelay(1);
   }
   /* USER CODE END StartUartCmdTask */
+}
+
+/* USER CODE BEGIN Header_StartButtonTask */
+/**
+* @brief Function implementing the ButtonTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartButtonTask */
+void StartButtonTask(void *argument)
+{
+  /* USER CODE BEGIN StartButtonTask */
+  osSemaphoreAcquire(ButtonSemHandle, 0); // 消耗掉開機時的初始 token，timeout 給 0 代表不等
+
+  /* Infinite loop */
+  for(;;)
+  {
+    osSemaphoreAcquire(ButtonSemHandle, osWaitForever); // 等中斷 give
+    osDelay(30);                                        // 等彈跳結束
+
+    if (BSP_PB_GetState(BUTTON_USER) == GPIO_PIN_RESET) // 按下 = 低電位 = 0
+    {
+      App_ButtonLed_OnPress(); // 確定是真的按下才處理
+    }
+
+    osSemaphoreAcquire(ButtonSemHandle, 0);             // 清掉彈跳期間多 give 的
+  }
+  /* USER CODE END StartButtonTask */
 }
 
 /**
