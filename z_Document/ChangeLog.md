@@ -43,3 +43,4 @@
 | 2026/09/12 | app_bmp180.c/.h, app_sdlog.c | Add: I2C failure counter for BMP180 read | 3561ea5 |
 | 2026/09/12 | main.c, .ioc | Add: Protect shared I2C1 bus with mutex | 689dc50 |
 | 2026/09/12 | main.c, app_sdlog.c | Add: Measure LedTask wake-up jitter | 1a9e22a |
+| 2026/11/01 | main.c, .ioc, app_button_led.c/.h | Add: Button debounce via ButtonTask + semaphore | b7cd007 |
